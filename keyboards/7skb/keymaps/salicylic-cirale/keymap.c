@@ -30,12 +30,27 @@ enum custom_keycodes {
 enum tapdances{
   TD_ESFL = 0,
   TD_ESQW,
+  TDH_CTLEMC
 };
 
-qk_tap_dance_action_t tap_dance_actions[] = {
-  [TD_ESFL] = ACTION_TAP_DANCE_DUAL_ROLE(KC_ESC, _FLOCK),
-  [TD_ESQW] = ACTION_TAP_DANCE_DUAL_ROLE(KC_ESC, _QWERTY),
+typedef struct {
+    bool is_press_action;
+    uint8_t state;
+} tap;
+
+enum {
+    SINGLE_TAP = 1,
+    SINGLE_HOLD,
+    DOUBLE_TAP,
+    DOUBLE_HOLD,
+    DOUBLE_SINGLE_TAP, // Send two single taps
 };
+
+uint8_t cur_dance(qk_tap_dance_state_t *state);
+
+// For the x tap dance. Put it here so it can be used in any keymap
+void x_finished(qk_tap_dance_state_t *state, void *user_data);
+void x_reset(qk_tap_dance_state_t *state, void *user_data);
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   [_QWERTY] = LAYOUT(
@@ -44,11 +59,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------+--------+--------+--------|
        KC_TAB,    KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,        KC_Y,    KC_U,    KC_I,    KC_O,    KC_P, JP_LBRC, JP_RBRC, KC_BSPC,
   //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------+--------+--------|
-     KC_LCTRL,    KC_A,    KC_S,    KC_D,    KC_F,    KC_G,        KC_H,    KC_J,    KC_K,    KC_L, KC_SCLN, JP_COLN,  KC_ENT,
+TD(TDH_CTLEMC),   KC_A,    KC_S,    KC_D,    KC_F,    KC_G,        KC_H,    KC_J,    KC_K,    KC_L, KC_SCLN, JP_COLN,  KC_ENT,
   //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------+--------|
       KC_LSFT,    KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,        KC_N,    KC_M, KC_COMM,  KC_DOT, JP_SLSH, KC_RSFT, LT(_FN,KC_ZKHK),
   //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------+--------|
-            LT(_EMACS,KC_LGUI), KC_LALT, MO(_LOWER),KC_SPC,      KC_SPC, MO(_RAISE),KC_RALT, KC_RCTRL
+                       KC_LGUI, KC_LALT, MO(_LOWER),KC_SPC,      KC_SPC, MO(_RAISE),KC_RALT, KC_RCTRL
           //`---------------------------------------------|   |--------------------------------------------'
   ),
 
@@ -195,3 +210,57 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
   return result;
 }
+
+// Tap Dance Hold
+
+uint8_t cur_dance(qk_tap_dance_state_t *state) {
+    if (state->count == 1) {
+        if (state->interrupted || !state->pressed) return SINGLE_TAP;
+        // Key has not been interrupted, but the key is still held. Means you want to send a 'HOLD'.
+        else return SINGLE_HOLD;
+    } else if (state->count == 2) {
+        // DOUBLE_SINGLE_TAP is to distinguish between typing "pepper", and actually wanting a double tap
+        // action when hitting 'pp'. Suggested use case for this return value is when you want to send two
+        // keystrokes of the key, and not the 'double tap' action/macro.
+        if (state->interrupted) return DOUBLE_SINGLE_TAP;
+        else if (state->pressed) return DOUBLE_HOLD;
+        else return DOUBLE_TAP;
+    } else return 8; // Magic number. At some point this method will expand to work for more presses
+}
+
+// Create an instance of 'tap' for the 'x' tap dance.
+static tap xtap_state = {
+    .is_press_action = true,
+    .state = 0
+};
+
+void x_finished(qk_tap_dance_state_t *state, void *user_data) {
+    xtap_state.state = cur_dance(state);
+    switch (xtap_state.state) {
+        case SINGLE_TAP: register_code(KC_LCTRL); break;
+        case SINGLE_HOLD: register_code(KC_LCTRL); break;
+        case DOUBLE_TAP: register_code(KC_LCTRL); break;
+        case DOUBLE_HOLD: layer_on(_EMACS); break;
+        // Last case is for fast typing. Assuming your key is `f`:
+        // For example, when typing the word `buffer`, and you want to make sure that you send `ff` and not `Esc`.
+        // In order to type `ff` when typing fast, the next character will have to be hit within the `TAPPING_TERM`, which by default is 200ms.
+        case DOUBLE_SINGLE_TAP: tap_code(KC_LCTRL); register_code(KC_LCTRL);
+    }
+}
+
+void x_reset(qk_tap_dance_state_t *state, void *user_data) {
+    switch (xtap_state.state) {
+        case SINGLE_TAP: unregister_code(KC_LCTRL); break;
+        case SINGLE_HOLD: unregister_code(KC_LCTRL); break;
+        case DOUBLE_TAP: unregister_code(KC_LCTRL); break;
+        case DOUBLE_HOLD: unregister_code(KC_LALT);
+        case DOUBLE_SINGLE_TAP: layer_off(_EMACS);
+    }
+    xtap_state.state = 0;
+}
+
+qk_tap_dance_action_t tap_dance_actions[] = {
+  [TD_ESFL] = ACTION_TAP_DANCE_DUAL_ROLE(KC_ESC, _FLOCK),
+  [TD_ESQW] = ACTION_TAP_DANCE_DUAL_ROLE(KC_ESC, _QWERTY),  
+  [TDH_CTLEMC] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, x_finished, x_reset)
+};
