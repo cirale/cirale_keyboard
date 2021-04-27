@@ -63,7 +63,7 @@ TD(TDH_CTLEMC),   KC_A,    KC_S,    KC_D,    KC_F,    KC_G,        KC_H,    KC_J
   //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------+--------|
       KC_LSFT,    KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,        KC_N,    KC_M, KC_COMM,  KC_DOT, JP_SLSH, KC_RSFT, LT(_FN,KC_ZKHK),
   //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------+--------|
-                       KC_LGUI, KC_LALT, MO(_LOWER),KC_SPC,      KC_SPC, MO(_RAISE),KC_RALT, KC_RCTRL
+                       KC_LGUI, KC_LALT, MO(_LOWER),KC_SPC,     KC_BSPC, MO(_RAISE),KC_RALT, KC_RCTRL
           //`---------------------------------------------|   |--------------------------------------------'
   ),
 
@@ -105,7 +105,7 @@ TD(TDH_CTLEMC),   KC_A,    KC_S,    KC_D,    KC_F,    KC_G,        KC_H,    KC_J
   //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------+--------|
       JP_CIRC, JP_PERC, JP_AMPR, JP_SCLN, JP_COLN, JP_PIPE,       KC_P0,   KC_P1,   KC_P2,   KC_P3, JP_PLUS, _______, _______,
   //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------+--------|
-               _______, _______,MO(_LOWER), _______,            KC_BSPC, MO(_RAISE),        JP_DOT, _______
+               _______,_______,MO(_LOWER),_______,               KC_DEL, MO(_RAISE),        JP_DOT, _______
           //`---------------------------------------------|   |--------------------------------------------'
   ),
 
@@ -119,7 +119,7 @@ TD(TDH_CTLEMC),   KC_A,    KC_S,    KC_D,    KC_F,    KC_G,        KC_H,    KC_J
   //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------+--------|
       _______, KC_BTN1, KC_BTN3, KC_BTN2, XXXXXXX, XXXXXXX,     XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, _______, _______,
   //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------+--------|
-               _______, _______, KC_MHEN,  KC_DEL,              _______, _______,          _______, _______
+               _______, _______, KC_MHEN, _______,              _______, _______,          _______, _______
           //`---------------------------------------------|   |--------------------------------------------'
   ),
   [_EMACS] = LAYOUT(
@@ -261,6 +261,6 @@ void x_reset(qk_tap_dance_state_t *state, void *user_data) {
 
 qk_tap_dance_action_t tap_dance_actions[] = {
   [TD_ESFL] = ACTION_TAP_DANCE_DUAL_ROLE(KC_ESC, _FLOCK),
-  [TD_ESQW] = ACTION_TAP_DANCE_DUAL_ROLE(KC_ESC, _QWERTY),  
+  [TD_ESQW] = ACTION_TAP_DANCE_DUAL_ROLE(KC_ESC, _QWERTY),
   [TDH_CTLEMC] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, x_finished, x_reset)
 };

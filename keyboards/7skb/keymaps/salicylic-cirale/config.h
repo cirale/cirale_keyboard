@@ -19,5 +19,5 @@
 /* Select hand configuration */
 
 #define TAPPING_FORCE_HOLD
-#define TAPPING_TERM 180
+#define TAPPING_TERM 120
 //#define MASTER_RIGHT
